@@ -47,8 +47,9 @@ predict <- function(object, ...) UseMethod("predict")
 #' @export
 predict.blm <- function(object, ...) {
   responseless.formula <- delete.response(terms(object$formula))
-  ellipsis_args <- list(...)
-  frame <- model.frame(responseless.formula, data = ellipsis_args$newdata)
+  args <- list(...)
+  d <- if (is.null(args$newdata)) object$frame else args$newdata
+  frame <- model.frame(responseless.formula, data = d)
   m <- model.matrix(responseless.formula, frame)
   namevec(t(object$posterior$mean) %*% t(m))
 }
