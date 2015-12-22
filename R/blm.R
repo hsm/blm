@@ -1,5 +1,3 @@
-# load("data/test-data.RData")
-
 #' @export
 blm <- function(model, prior = NULL, alpha = 1, beta = 1, ...) {
   frame <- model.frame(model, ...)
