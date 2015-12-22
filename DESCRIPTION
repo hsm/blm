@@ -1,0 +1,14 @@
+Package: blm
+Type: Package
+Title: Bayesian linear regression modelling
+Version: 0.0.0.9000
+Date: 2015-12-19
+Authors@R: person("Henrik", "Schmidt-Møller", email = "smurf@cs.au.dk", role = c("aut", "cre"))
+Description: More about what it does (maybe more than one line)
+License: GPL-2
+Imports:
+    ggplot2
+Suggests:
+    testthat,
+    knitr
+RoxygenNote: 5.0.1
