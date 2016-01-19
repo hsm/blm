@@ -4,7 +4,7 @@
 #' @param prior a prior
 #' @param alpha the covariance precision
 #' @param beta the precision
-#' @param ... other arguments
+#' @param ... other arguments passed to the model.frame method. Adding data as a parameter can be used to add data not in the enclosing environment
 #' @return an object of \link{class} blm
 #' @export
 blm <- function(formula, prior = NULL, alpha = 1, beta = 1, ...) {
@@ -23,18 +23,36 @@ blm <- function(formula, prior = NULL, alpha = 1, beta = 1, ...) {
   structure(list(formula = formula,
                  frame = frame,
                  posterior = posterior,
-                 call = match.call()),
+                 call = sys.call()),
             class = "blm")
 }
 
-distribution <- function(x) UseMethod("distribution")
+distribution <- function(object) UseMethod("distribution")
 distribution.default <- I
-distribution.blm <- function(x) x$posterior
 
-namevec <- function(x) {
-  result <- as.vector(x)
-  names(result) <- seq_along(x)
-  result
+#' Extract model distribution
+#'
+#' The distribution parameters is the means and the covariance of the current posterior
+#'
+#' @param object an object of \link{class} blm
+#' @return The distribution parameters
+#' @export
+distribution.blm <- function(object) object$posterior
+
+update <- function(object, ...) UseMethod("update")
+update.default <- function(object, ...) stop("update default not implemented")
+
+#' Updating the model
+#'
+#' The distribution of the current model is used as a prior, and any new data is used to build the
+#' new model.
+#'
+#' @param object the current model. An object of \link{class} blm
+#' @param ... other arguments passed to blm
+#' @return An updated object of \link{class} blm
+#' @export
+update.blm <- function(object, ...) {
+  blm(object$formula, prior = distribution(object), ...)
 }
 
 coefficients <- function(object, ...) UseMethod("coefficients")
@@ -63,8 +81,6 @@ coefficients.blm <- function(object, ...) {
 #' @return A vector of predictions
 #' @export
 predict.blm <- function(object, newdata = NULL, ...) {
-  #args <- list(...)
-  #d <- if (is.null(args$newdata)) object$frame else args$newdata
   d <- if (is.null(newdata)) object$frame else newdata
   predict_on_data(object, d)
 }
@@ -74,6 +90,12 @@ predict_on_data <- function(object, data) {
   frame <- model.frame(responseless.formula, data = data)
   m <- model.matrix(responseless.formula, frame)
   namevec(t(object$posterior$mean) %*% t(m))
+}
+
+namevec <- function(x) {
+  result <- as.vector(x)
+  names(result) <- seq_along(x)
+  result
 }
 
 #' Extract blm residuals
