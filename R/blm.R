@@ -1,7 +1,15 @@
+#' Fitting Bayesian linear models
+#'
+#' @param formula An object of class \link{formula}
+#' @param prior a prior
+#' @param alpha the covariance precision
+#' @param beta the precision
+#' @param ... other arguments
+#' @return an object of \link{class} blm
 #' @export
-blm <- function(model, prior = NULL, alpha = 1, beta = 1, ...) {
-  frame <- model.frame(model, ...)
-  m <- model.matrix(model, frame)
+blm <- function(formula, prior = NULL, alpha = 1, beta = 1, ...) {
+  frame <- model.frame(formula, ...)
+  m <- model.matrix(formula, frame)
 
   if (is.null(prior)) {
     d <- dim(m)[[2]]
@@ -12,7 +20,7 @@ blm <- function(model, prior = NULL, alpha = 1, beta = 1, ...) {
   mean <- beta * covar %*% t(m) %*% model.response(frame)
   posterior <- list(mean = mean, covar = covar)
 
-  structure(list(formula = model,
+  structure(list(formula = formula,
                  frame = frame,
                  posterior = posterior,
                  call = match.call()),
@@ -31,6 +39,13 @@ namevec <- function(x) {
 
 coefficients <- function(object, ...) UseMethod("coefficients")
 
+#' Extract model coefficients
+#'
+#' The coefficients of the blm model is the means of the posterior
+#'
+#' @param object an object of \link{class} blm
+#' @param ... other arguments
+#' @return A named numeric vector of coefficients
 #' @export
 coefficients.blm <- function(object, ...) {
   result <- as.vector(object$posterior$mean)
@@ -38,10 +53,19 @@ coefficients.blm <- function(object, ...) {
   result
 }
 
+#' Predict method for Bayesian Linear models
+#'
+#' Provides prediction based on the fitted Bayesian linear model
+#'
+#' @param object an object of \link{class} blm
+#' @param newdata An optional data frame in which to look for variables with which to predict. If omitted, the fitted values are used
+#' @param ... other arguments
+#' @return A vector of predictions
 #' @export
-predict.blm <- function(object, ...) {
-  args <- list(...)
-  d <- if (is.null(args$newdata)) object$frame else args$newdata
+predict.blm <- function(object, newdata = NULL, ...) {
+  #args <- list(...)
+  #d <- if (is.null(args$newdata)) object$frame else args$newdata
+  d <- if (is.null(newdata)) object$frame else newdata
   predict_on_data(object, d)
 }
 
@@ -52,16 +76,38 @@ predict_on_data <- function(object, data) {
   namevec(t(object$posterior$mean) %*% t(m))
 }
 
+#' Extract blm residuals
+#'
+#' Calculates the difference between the predicted values and the observed values for the response variable
+#'
+#' @param object an object of \link{class} blm
+#' @param ... other arguments
+#' @return A vector of residuals
 #' @export
 residuals.blm <- function(object, ...) {
   model.response(object$frame) - fitted(object, ...)
 }
 
+#' Extract blm Fitted Values
+#'
+#' The fitted values are the predicted values of the model using the data used to fit the model
+#'
+#' @param object an object of \link{class} blm
+#' @param ... other arguments
+#' @return A vector of fits
 #' @export
 fitted.blm <- function(object, ...) {
   predict_on_data(object, object$frame)
 }
 
+#' Confidence Intervals for Model Parameters
+#'
+#' Computes confidence intervals for the parameters in the fitted model
+#'
+#' @param object an object of \link{class} blm
+#' @param level the confidence level required
+#' @param ... other arguments
+#' @return A matrix with columns giving lower and upper confidence limits for each parameter.
 #' @export
 confint.blm <- function(object, level = 0.95, ...) {
   alpha <- 1 - level
@@ -75,28 +121,41 @@ confint.blm <- function(object, level = 0.95, ...) {
   result
 }
 
+#' Model Deviance
+#'
+#' Computes the sum of the squared distance between the observed and predicted values
+#'
+#' @param object an object of \link{class} blm
+#' @param ... other arguments
+#' @return the deviance
 #' @export
 deviance.blm <- function(object, ...) {
   sum(residuals(object, ...)^2)
 }
 
+#' Plot Diagnostics for a blm Object
+#'
+#' Plots residuals vs fitted parameters
+#'
+#' @param x an object of \link{class} blm
+#' @param ... other arguments
 #' @export
-plot.blm <- function(object, ...) {
-  r <- residuals(object, ...)
-  yh <- fitted(object, ...)
-  plot(yh, r, ylim = range(r), main = "Residuals vs Fitted", xlab = paste("Fitted", deparse(object$call), sep = "\n"), ylab = "Residuals")
+plot.blm <- function(x, ...) {
+  r <- residuals(x, ...)
+  yh <- fitted(x, ...)
+  plot(yh, r, ylim = range(r), main = "Residuals vs Fitted", xlab = paste("Fitted", deparse(x$call), sep = "\n"), ylab = "Residuals")
   abline(h=0, col=4, lty=2)
 }
 
 #' @export
-print.blm <- function(object, ...) {
+print.blm <- function(x, ...) {
   # Copied and modified from print.lm using getAnywhere('print.lm')
-  cat("\nCall:\n", paste(deparse(object$call), sep = "\n", collapse = "\n"),
+  cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
       "\n\n", sep = "")
   cat("Coefficients:\n")
-  print.default(coefficients(object), print.gap = 2L, quote = FALSE)
+  print.default(coefficients(x), print.gap = 2L, quote = FALSE)
   cat("\n")
-  invisible(object)
+  invisible(x)
 }
 
 #' @export

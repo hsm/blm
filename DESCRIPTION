@@ -4,10 +4,10 @@ Title: Bayesian linear regression modelling
 Version: 0.0.0.9000
 Date: 2015-12-19
 Authors@R: person("Henrik", "Schmidt-Møller", email = "smurf@cs.au.dk", role = c("aut", "cre"))
-Description: More about what it does (maybe more than one line)
+Description: Predict using Bayesian Linear Regression. A bayesian approach to linear modelling.
 License: GPL-2
 Imports:
-    ggplot2
+    MASS
 Suggests:
     testthat,
     knitr
